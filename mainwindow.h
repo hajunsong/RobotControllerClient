@@ -33,6 +33,7 @@ private:
     TcpClient *tcpClient;
     CustomSettings *customSettings;
     QStandardItemModel *model;
+    DataControl *dataControl;
 
 public slots:
     // button event

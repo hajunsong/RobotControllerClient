@@ -4,6 +4,8 @@
 #include <QFile>
 #include <QDesktopServices>
 #include <QApplication>
+#include <QWidget>
+#include <QMainWindow>
 
 class CustomSettings : public QSettings{
 public:

@@ -24,6 +24,7 @@ CONFIG += c++11 console
 
 SOURCES += \
         DataControl/datacontrol.cpp \
+        FileIO/fileio.cpp \
         Logger/logger.cpp \
         Settings/customsettings.cpp \
         TcpSocket/tcpclient.cpp \
@@ -32,6 +33,7 @@ SOURCES += \
 
 HEADERS += \
         DataControl/datacontrol.h \
+        FileIO/fileio.h \
         Logger/logger.h \
         Settings/customsettings.h \
         TcpSocket/tcpclient.h \

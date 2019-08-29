@@ -10,10 +10,13 @@
 #include <QWidget>
 #include <QTableView>
 #include <QStandardItemModel>
+#include <QStandardItem>
+#include <QFileDialog>
 
 #include "TcpSocket/tcpclient.h"
 #include "Settings/customsettings.h"
 #include "DataControl/datacontrol.h"
+#include "FileIO/fileio.h"
 
 namespace Ui {
 class MainWindow;
@@ -40,12 +43,14 @@ private:
     QStandardItemModel *model;
     QStandardItemModel *jointPathModel, *cartPathModel;
     QByteArray txData;
+    int rowIndex;
 
     void componentEnable(bool enable);
 
     QVector<QLineEdit*> txtCmdRel, txtCmdAbs;
-
     void setTxtCommandClear();
+
+    vector< vector<double> > jointPathTxtData, cartPathTxtData;
 
 public slots:
     // button event
@@ -61,6 +66,7 @@ public slots:
     void btnPathClearClicked();
     void btnPathInsertClicked();
     void btnPathDeleteClicked();
+    void btnPathAppendClicked();
 
     // checkbox event
     void cbJointPathClicked();
@@ -70,6 +76,9 @@ public slots:
     void onConnectServer();
     void disConnectServer();
     void readMessage();
+
+    // tableview event
+    void on_tvPathData_clicked(const QModelIndex &index);
 };
 
 #endif // MAINWINDOW_H

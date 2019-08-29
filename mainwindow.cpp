@@ -103,9 +103,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->btnPathApply, SIGNAL(clicked()), this, SLOT(btnPathApplyClicked()));
     connect(ui->btnPathInsert, SIGNAL(clicked()), this, SLOT(btnPathInsertClicked()));
     connect(ui->btnPathDelete, SIGNAL(clicked()), this, SLOT(btnPathDeleteClicked()));
+    connect(ui->btnPathAppend, SIGNAL(clicked()), this, SLOT(btnPathAppendClicked()));
 
-    jointPathModel = new QStandardItemModel(1, NUM_JOINT, this);
-    cartPathModel = new QStandardItemModel(1, NUM_DOF, this);
+    jointPathModel = new QStandardItemModel{0, NUM_JOINT};
+    cartPathModel = new QStandardItemModel{0, NUM_DOF};
 
     ui->txtNumJoint->setText(QString::number(NUM_JOINT));
     ui->txtNumDof->setText(QString::number(NUM_DOF));
@@ -124,6 +125,8 @@ MainWindow::~MainWindow()
     delete ui;
     delete tcpClient;
     delete dataControl;
+    delete jointPathModel;
+    delete cartPathModel;
 }
 
 void MainWindow::btnConnectClicked(){
@@ -282,7 +285,7 @@ void MainWindow::btnSetCommandClicked()
     QString CJ = objName.at(3);
     int objIndex = -1;
     QString RA = nullptr;
-    double value;
+    double value = 0;
 
     if (CJ == "J"){
         objIndex = moduleIndex - 1;
@@ -428,14 +431,19 @@ void MainWindow::setTxtCommandClear()
 void MainWindow::cbJointPathClicked()
 {
     ui->cbCartesianPath->setChecked(!ui->cbJointPath->isChecked());
-
-    int row = 1;
     ui->tvPathData->setModel(jointPathModel);
 
-    for(int i = 0; i < row; i++){
-        for(int j = 0; j < NUM_JOINT; j++){
-            QModelIndex index = jointPathModel->index(i, j, QModelIndex());
-            jointPathModel->setData(index, 0);
+    if (jointPathModel->rowCount() == 0){
+//        btnPathAppendClicked();
+
+        model = new QStandardItemModel(1, NUM_JOINT);
+        ui->tvRobotInfor->setModel(model);
+
+        for(int i = 0; i < 1; i++){
+            for(int j = 0; j < NUM_JOINT; j++){
+                QModelIndex index = model->index(i, j, QModelIndex());
+                model->setData(index, 0);
+            }
         }
     }
 }
@@ -443,21 +451,33 @@ void MainWindow::cbJointPathClicked()
 void MainWindow::cbCartesianPathClicked()
 {
     ui->cbJointPath->setChecked(!ui->cbCartesianPath->isChecked());
-
-    int row = 1;
     ui->tvPathData->setModel(cartPathModel);
 
-    for(int i = 0; i < row; i++){
-        for(int j = 0; j < NUM_DOF; j++){
-            QModelIndex index = cartPathModel->index(i, j, QModelIndex());
-            cartPathModel->setData(index, 0);
-        }
+    if (cartPathModel->rowCount() == 0){
+        btnPathAppendClicked();
     }
 }
 
 void MainWindow::btnFileLoadClicked()
 {
-
+    QString fileName = QFileDialog::getOpenFileName(this, QString::fromLocal8Bit("텍스트 파일"),"","txt (*.txt)");
+    qDebug() << fileName;
+    if (ui->cbJointPath->isChecked()){
+        load_data(fileName.toStdString(), &jointPathTxtData);
+        int row = static_cast<int>(jointPathTxtData.size());
+        jointPathModel->removeRows(0, jointPathModel->rowCount());
+        for(int i = 0; i < 1; i++){
+            QStandardItem insertRow{0, NUM_JOINT};
+            jointPathModel->insertRow(jointPathModel->rowCount(), &insertRow);
+            for(int j = 0; j < NUM_JOINT; j++){
+                QModelIndex index = jointPathModel->index(i, j, QModelIndex());
+                jointPathModel->setData(index, jointPathTxtData[static_cast<size_t>(i)][static_cast<size_t>(j)]);
+            }
+        }
+    }
+    else{
+        load_data(fileName.toStdString(), &cartPathTxtData);
+    }
 }
 
 void MainWindow::btnPathApplyClicked()
@@ -468,34 +488,51 @@ void MainWindow::btnPathApplyClicked()
 void MainWindow::btnPathClearClicked()
 {
     if (ui->cbJointPath->isChecked()){
-        jointPathModel->clear();
+        jointPathModel->removeRows(0, jointPathModel->rowCount());
     }
     else{
-        cartPathModel->clear();
+        cartPathModel->removeRows(0, jointPathModel->rowCount());
     }
 }
 
 void MainWindow::btnPathInsertClicked()
 {
     if (ui->cbJointPath->isChecked()){
-        jointPathModel->insertRow(1);
+        QStandardItem insertRow{0, NUM_JOINT};
+        jointPathModel->insertRow(rowIndex, &insertRow);
     }
     else{
-        cartPathModel->insertRow(1);
+        QStandardItem insertRow{0, NUM_DOF};
+        cartPathModel->insertRow(rowIndex, &insertRow);
     }
 }
 
 void MainWindow::btnPathDeleteClicked()
 {
-    if (ui->cbJointPath->isChecked()){
-        jointPathModel->removeRows(jointPathModel->se, 1);
-    }
-    else{
+    if (rowIndex >= 0){
+        if (ui->cbJointPath->isChecked()){
+            jointPathModel->removeRow(rowIndex);
+        }
+        else{
+            cartPathModel->removeRow(rowIndex);
+        }
+        rowIndex = -1;
     }
 }
 
-//for(int i = 0; i < NUM_JOINT; i++){
-//    QModelIndex index = model->index(0, i);
-//    model->setData(index, dataControl->ServerToClient.presentJointPosition[i]);
-//    ui->tvRobotInfor->update(index);
-//}
+void MainWindow::btnPathAppendClicked()
+{
+    if (ui->cbJointPath->isChecked()){
+        QStandardItem insertRow{0, NUM_JOINT};
+        jointPathModel->insertRow(jointPathModel->rowCount(), &insertRow);
+    }
+    else{
+        QStandardItem insertRow{0, NUM_DOF};
+        cartPathModel->insertRow(cartPathModel->rowCount(), &insertRow);
+    }
+}
+
+void MainWindow::on_tvPathData_clicked(const QModelIndex &index)
+{
+    rowIndex = index.row();
+}
